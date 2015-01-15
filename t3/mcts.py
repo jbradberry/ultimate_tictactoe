@@ -69,13 +69,17 @@ class MonteCarlo(BasePlayer):
         expand = True
         for t in xrange(self.max_moves):
             state = new_states[-1]
-            p1, p2, lastplay, player = state
+            player = state[-1]
             legal = self.board.legal_plays(state)
             states = [(p, self.board.play(state, p)) for p in legal]
 
             plays, wins = self.plays[player], self.wins[player]
             if all(plays.get(S) for p, S in states):
-                log_total = log(sum(plays[S] for p, S in states))
+                try:
+                    log_total = log(sum(plays[S] for p, S in states))
+                except Exception as e:
+                    print state
+                    raise
                 move, state = max(((wins[S] / plays[S]) +
                                    self.C * sqrt(log_total / plays[S]), p, S)
                                   for p, S in states)[1:]

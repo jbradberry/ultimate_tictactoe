@@ -4,9 +4,7 @@ class Board(object):
     num_players = 2
 
     positions = dict(
-        ((R, C, r, c), 1<<(27*R + 9*r + 3*C + c))
-        for R in xrange(3)
-        for C in xrange(3)
+        ((r, c), 1<<(3*r + c))
         for r in xrange(3)
         for c in xrange(3)
     )
@@ -15,30 +13,40 @@ class Board(object):
         (v, P) for P, v in positions.iteritems()
     )
 
-    wins = [
-        frozenset((0, C) for C in xrange(3)),
-        frozenset((1, C) for C in xrange(3)),
-        frozenset((2, C) for C in xrange(3)),
-        frozenset((R, 0) for R in xrange(3)),
-        frozenset((R, 1) for R in xrange(3)),
-        frozenset((R, 2) for R in xrange(3)),
-        frozenset((R, R) for R in xrange(3)),
-        frozenset((R, 2-R) for R in xrange(3)),
+    wins_r = [
+        positions[(r, 0)] | positions[(r, 1)] | positions[(r, 2)]
+        for r in xrange(3)
+    ]
+
+    wins_c = [
+        positions[(0, c)] | positions[(1, c)] | positions[(2, c)]
+        for c in xrange(3)
+    ]
+
+    wins = wins_r + wins_c + [
+        positions[(0, 0)] | positions[(1, 1)] | positions[(2, 2)],
+        positions[(0, 2)] | positions[(1, 1)] | positions[(2, 0)],
     ]
 
     def start(self):
-        return (0, 0, (), 1)
+        # Each of the 9 pairs of player 1 and player 2 board bitmasks
+        # plus the win/tie state of the big board for p1 and p2
+        # plus the row and column of the required board for the next move
+        # and finally the player number to move.
+        return (0, 0) * 10 + (None, None, 1)
 
     def display(self, state, play, _unicode=True):
-        p1, p2, lastplay, player = state
-        plays = {}
-        for (R, C, r, c), val in self.positions.iteritems():
-            piece = u" "
-            if val & p1:
-                piece = u'X'
-            elif val & p2:
-                piece = u'O'
-            plays[(R, C, r, c)] = piece
+        plays = dict(
+            ((R, C, r, c), p)
+            for R in xrange(3)
+            for C in xrange(3)
+            for r in xrange(3)
+            for c in xrange(3)
+            for i, p in enumerate('XO')
+            if state[2*(3*R + C) + i] & self.positions[(r, c)]
+        )
+
+        player = state[-1]
 
         sub = u"\u2564".join(u"\u2550" for x in xrange(3))
         top = u"\u2554" + u"\u2566".join(sub for x in xrange(3)) + u"\u2557\n"
@@ -62,7 +70,7 @@ class Board(object):
                     u"\u2551" +
                     u"\u2551".join(
                         u"\u2502".join(
-                            plays[(R, C, r, c)] for c in xrange(3)
+                            plays.get((R, C, r, c), " ") for c in xrange(3)
                         )
                         for C in xrange(3)
                     ) +
@@ -88,68 +96,72 @@ class Board(object):
             return ''
 
     def play(self, state, play):
-        p1, p2, lastplay, player = state
-        positions = {1: p1, 2: p2}
-        positions[player] |= self.positions[play]
-        return positions[1], positions[2], play[2:], 3 - player
+        R, C, r, c = play
+        player = state[-1]
+        board_index = 2*(3*R + C)
+        player_index = player - 1
+
+        state = list(state)
+        state[-1] = 3 - player
+        state[board_index + player_index] |= self.positions[(r, c)]
+
+        full = (state[board_index] | state[board_index+1] == 0x1ff)
+        if (full or any(state[board_index] & w == w for w in self.wins)):
+            state[18] |= self.positions[(R, C)]
+        if (full or any(state[board_index+1] & w == w for w in self.wins)):
+            state[19] |= self.positions[(R, C)]
+
+        if (state[18] | state[19]) & self.positions[(r, c)]:
+            state[20], state[21] = None, None
+        else:
+            state[20], state[21] = r, c
+
+        return tuple(state)
 
     def is_legal(self, state, play):
+        R, C, r, c = play
+
         # Is play out of bounds?
-        if play not in self.positions:
+        if (R, C) not in self.positions:
+            return False
+        if (r, c) not in self.positions:
             return False
 
-        # Is this the first play?
-        p1state, p2state, lastplay, player = state
-        if not lastplay:
+        player = state[-1]
+        board_index = 2*(3*R + C)
+        player_index = player - 1
+
+        # Is the square within the sub-board already taken?
+        occupied = state[board_index] | state[board_index+1]
+        if self.positions[(r, c)] & occupied:
+            return False
+
+        # Is our play unconstrained by the previous play?
+        if state[20] is None:
             return True
 
-        # Is the square already taken?
-        occupied = p1state | p2state
-        if self.positions[play] & occupied:
-            return False
-
-        # Is the corresponding sub-board already won?
-        finished = self.finished_boards(state)
-        if lastplay in finished:
-            return play[:2] not in finished
-
         # Otherwise, we must play in the proper sub-board.
-        return play[:2] == lastplay
-
-    def finished_boards(self, state):
-        finished, positions = {}, {}
-        p1, p2, lastplay, player = state
-        for (R, C, r, c), val in self.positions.iteritems():
-            subboard = positions.setdefault((R, C), {1: set(), 2: set()})
-            if val & p1:
-                subboard[1].add((r, c))
-            elif val & p2:
-                subboard[2].add((r, c))
-
-        for (R, C), subboard in positions.iteritems():
-            for player in subboard:
-                if any(winset <= subboard[player] for winset in self.wins):
-                    finished[(R, C)] = player
-                    break
-            if len(subboard[1]) + len(subboard[2]) == 9:
-                finished.setdefault((R, C), 3)
-
-        return finished
+        return (R, C) == (state[20], state[21])
 
     def legal_plays(self, state):
-        p1, p2, lastplay, player = state
-        occupied = p1 | p2
+        R, C = state[20], state[21]
+        Rset, Cset = (R,), (C,)
+        if R is None:
+            Rset, Cset = range(3), range(3)
 
-        if not lastplay:
-            return self.positions.keys()
-
-        finished = self.finished_boards(state)
+        occupied = [
+            state[2*x] | state[2*x+1] for x in xrange(9)
+        ]
+        finished = state[18] | state[19]
 
         plays = [
-            (R, C, r, c) for (R, C, r, c), val in self.positions.iteritems()
-            if not val & occupied
-            and (R, C) not in finished
-            and (lastplay == (R, C) or lastplay in finished)
+            (R, C, r, c)
+            for R in Rset
+            for C in Cset
+            for r in xrange(3)
+            for c in xrange(3)
+            if not occupied[3*R+C] & self.positions[(r, c)]
+            and not finished & self.positions[(R, C)]
         ]
 
         return plays
@@ -159,19 +171,16 @@ class Board(object):
 
     def winner(self, state_lst):
         state = state_lst[-1]
-        finished = self.finished_boards(state)
+        p1 = state[18] & ~state[19]
+        p2 = state[19] & ~state[18]
 
-        for player in (1, 2):
-            boards_won = set(
-                board for board, p in finished.iteritems()
-                if p == player
-            )
-
-            if any(winset <= boards_won for winset in self.wins):
-                return player
-
-        if len(finished) == 9:
+        if any(w & p1 == w for w in self.wins):
+            return 1
+        if any(w & p2 == w for w in self.wins):
+            return 2
+        if state[18] | state[19] == 0x1ff:
             return 3
+
         return 0
 
     def winner_message(self, winner):
