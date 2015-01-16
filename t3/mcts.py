@@ -88,7 +88,7 @@ class MonteCarlo(BasePlayer):
 
             new_states.append(state)
 
-            if expand and state not in self.plays[player]:
+            if expand and state not in plays:
                 expand = False
                 plays[state] = 0
                 wins[state] = 0
@@ -101,8 +101,8 @@ class MonteCarlo(BasePlayer):
 
         for player, M in game_moves.iteritems():
             for S in M:
-                if S in plays:
-                    plays[S] += 1
+                if S in self.plays[player]:
+                    self.plays[player][S] += 1
         if winner in (1, 2):
             for S in game_moves[winner]:
                 if S in self.plays[winner]:
