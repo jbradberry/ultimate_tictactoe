@@ -75,11 +75,7 @@ class MonteCarlo(BasePlayer):
 
             plays, wins = self.plays[player], self.wins[player]
             if all(plays.get(S) for p, S in states):
-                try:
-                    log_total = log(sum(plays[S] for p, S in states))
-                except Exception as e:
-                    print state
-                    raise
+                log_total = log(sum(plays[S] for p, S in states))
                 move, state = max(((wins[S] / plays[S]) +
                                    self.C * sqrt(log_total / plays[S]), p, S)
                                   for p, S in states)[1:]
