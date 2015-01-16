@@ -1,0 +1,1 @@
+-e git+https://github.com/jbradberry/boardgame-socketserver#egg=BoardServer
