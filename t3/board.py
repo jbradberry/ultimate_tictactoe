@@ -13,17 +13,13 @@ class Board(object):
         (v, P) for P, v in positions.iteritems()
     )
 
-    wins_r = [
+    wins = [
         positions[(r, 0)] | positions[(r, 1)] | positions[(r, 2)]
         for r in xrange(3)
-    ]
-
-    wins_c = [
+    ] + [
         positions[(0, c)] | positions[(1, c)] | positions[(2, c)]
         for c in xrange(3)
-    ]
-
-    wins = wins_r + wins_c + [
+    ] + [
         positions[(0, 0)] | positions[(1, 1)] | positions[(2, 2)],
         positions[(0, 2)] | positions[(1, 1)] | positions[(2, 0)],
     ]
