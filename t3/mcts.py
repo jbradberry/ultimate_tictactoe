@@ -25,7 +25,7 @@ class MonteCarlo(BasePlayer):
     def __init__(self, board, **kwargs):
         super(MonteCarlo, self).__init__(board, **kwargs)
         self.max_moves = 9 * 9
-        self.max_time = datetime.timedelta(seconds=30)
+        self.max_time = datetime.timedelta(seconds=5)
         self.C = kwargs.get('C', 1.4)
         self.wins = {1: {}, 2: {}}
         self.plays = {1: {}, 2: {}}
