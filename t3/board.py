@@ -100,11 +100,13 @@ class Board(object):
         state = list(state)
         state[-1] = 3 - player
         state[board_index + player_index] |= self.positions[(r, c)]
+        updated_board = state[board_index + player_index]
 
         full = (state[board_index] | state[board_index+1] == 0x1ff)
-        if (full or any(state[board_index] & w == w for w in self.wins)):
+        if any(updated_board & w == w for w in self.wins):
+            state[18 + player_index] |= self.positions[(R, C)]
+        elif full:
             state[18] |= self.positions[(R, C)]
-        if (full or any(state[board_index+1] & w == w for w in self.wins)):
             state[19] |= self.positions[(R, C)]
 
         if (state[18] | state[19]) & self.positions[(r, c)]:
