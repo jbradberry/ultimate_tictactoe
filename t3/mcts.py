@@ -29,8 +29,13 @@ class MonteCarlo(BasePlayer):
         self.C = kwargs.get('C', 1.4)
         self.wins = {1: {}, 2: {}}
         self.plays = {1: {}, 2: {}}
+        self.max_depth = 0
+        self.stats = None
 
     def get_play(self):
+        self.max_depth = 0
+        self.stats = {}
+
         state = self.states[-1]
         player = state[-1]
         legal = self.board.legal_plays(state)
@@ -47,18 +52,27 @@ class MonteCarlo(BasePlayer):
             self.random_game()
             games += 1
 
-        print games, datetime.datetime.utcnow() - begin
+        self.stats.update(games=games, max_depth=self.max_depth,
+                          time=str(datetime.datetime.utcnow() - begin))
+        print self.stats['games'], self.stats['time']
+        print "Maximum depth searched:", self.max_depth
+
+        self.stats['moves'] = sorted(
+            ({'move': p,
+              'percent': 100 * self.wins[player].get(S,0) / self.plays[player].get(S,1),
+              'wins': self.wins[player].get(S,0),
+              'plays': self.plays[player].get(S,0)}
+             for p, S in states),
+            key=lambda x: (x['percent'], x['plays']),
+            reverse=True,
+        )
+        for m in self.stats['moves']:
+            print "{move}: {percent:.2f}% ({wins} / {plays})".format(**m)
+
         move = max(
             (self.wins[player].get(S,0) / self.plays[player].get(S,1), p)
             for p, S in states
         )[1]
-
-        for x in sorted(((100 * self.wins[player].get(S,0)
-                          / self.plays[player].get(S,1),
-                          self.wins[player].get(S,0),
-                          self.plays[player].get(S,0), p)
-                         for p, S in states), reverse=True):
-            print "{3}: {0:.2f}% ({1} / {2})".format(*x)
 
         return move
 
@@ -67,7 +81,7 @@ class MonteCarlo(BasePlayer):
         new_states = self.states[:]
 
         expand = True
-        for t in xrange(self.max_moves):
+        for t in xrange(1, self.max_moves + 1):
             state = new_states[-1]
             player = state[-1]
             legal = self.board.legal_plays(state)
@@ -88,6 +102,8 @@ class MonteCarlo(BasePlayer):
                 expand = False
                 plays[state] = 0
                 wins[state] = 0
+                if t > self.max_depth:
+                    self.max_depth = t
 
             game_moves[player].add(state)
 
