@@ -91,7 +91,7 @@ class Board(object):
         except Exception:
             return ''
 
-    def play(self, state, play):
+    def next_state(self, state, play):
         R, C, r, c = play
         player = state[-1]
         board_index = 2*(3*R + C)
@@ -116,7 +116,8 @@ class Board(object):
 
         return tuple(state)
 
-    def is_legal(self, state, play):
+    def is_legal(self, state_history, play):
+        state = state_history[-1]
         R, C, r, c = play
 
         # Is play out of bounds?
@@ -141,7 +142,8 @@ class Board(object):
         # Otherwise, we must play in the proper sub-board.
         return (R, C) == (state[20], state[21])
 
-    def legal_plays(self, state):
+    def legal_plays(self, state_history):
+        state = state_history[-1]
         R, C = state[20], state[21]
         Rset, Cset = (R,), (C,)
         if R is None:
@@ -164,11 +166,11 @@ class Board(object):
 
         return plays
 
-    def next_player(self, state):
+    def current_player(self, state):
         return state[-1]
 
-    def winner(self, state_lst):
-        state = state_lst[-1]
+    def winner(self, state_history):
+        state = state_history[-1]
         p1 = state[18] & ~state[19]
         p2 = state[19] & ~state[18]
 

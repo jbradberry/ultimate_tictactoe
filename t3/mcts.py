@@ -38,14 +38,14 @@ class MonteCarlo(BasePlayer):
 
         state = self.states[-1]
         player = state[-1]
-        legal = self.board.legal_plays(state)
+        legal = self.board.legal_plays([state])
 
         if not legal:
             return
         if len(legal) == 1:
             return legal[0]
 
-        states = [(p, self.board.play(state, p)) for p in legal]
+        states = [(p, self.board.next_state(state, p)) for p in legal]
 
         begin, games = datetime.datetime.utcnow(), 0
         while datetime.datetime.utcnow() - begin < self.max_time:
@@ -84,8 +84,8 @@ class MonteCarlo(BasePlayer):
         for t in xrange(1, self.max_moves + 1):
             state = new_states[-1]
             player = state[-1]
-            legal = self.board.legal_plays(state)
-            states = [(p, self.board.play(state, p)) for p in legal]
+            legal = self.board.legal_plays([state])
+            states = [(p, self.board.next_state(state, p)) for p in legal]
 
             plays, wins = self.plays[player], self.wins[player]
             if all(plays.get(S) for p, S in states):

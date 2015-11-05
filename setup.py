@@ -2,7 +2,7 @@ from distutils.core import setup
 
 setup(
     name='UltimateTicTacToe',
-    version='0.7',
+    version='0.8.0-dev',
     author='Jeff Bradberry',
     author_email='jeff.bradberry@gmail.com',
     packages=['t3'],
