@@ -36,12 +36,12 @@ and then install the requirements ::
 
 To run the server with Ultimate Tic Tac Toe ::
 
-    $ board-server.py t3
+    $ board-serve.py t3
 
 Optionally, the server ip address and port number can be added ::
 
-    $ board-server.py t3 0.0.0.0
-    $ board-server.py t3 0.0.0.0 8000
+    $ board-serve.py t3 0.0.0.0
+    $ board-serve.py t3 0.0.0.0 8000
 
 To connect a client as a human player ::
 
