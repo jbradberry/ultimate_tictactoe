@@ -8,7 +8,6 @@ setup(
     packages=['t3'],
     entry_points={
         'jrb_board.games': 't3 = t3.board:Board',
-        'jrb_board.players': 't3.jrb_mcts = t3.mcts:MonteCarlo',
     },
     license='LICENSE',
     description="An implementation of Ultimate Tic Tac Toe.",

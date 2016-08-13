@@ -26,13 +26,13 @@ class Board(object):
 
     def start(self):
         # Each of the 9 pairs of player 1 and player 2 board bitmasks
-        # plus the win/tie state of the big board for p1 and p2
-        # plus the row and column of the required board for the next move
+        # plus the win/tie state of the big board for p1 and p2 plus
+        # the row and column of the required board for the next action
         # and finally the player number to move.
         return (0, 0) * 10 + (None, None, 1)
 
-    def display(self, state, play, _unicode=True):
-        plays = dict(
+    def display(self, state, action, _unicode=True):
+        actions = dict(
             ((R, C, r, c), p)
             for R in xrange(3)
             for C in xrange(3)
@@ -55,8 +55,8 @@ class Board(object):
 
         sub = u"\u2567".join(u"\u2550" for x in xrange(3))
         bot = u"\u255a" + u"\u2569".join(sub for x in xrange(3)) + u"\u255d\n"
-        if play:
-            bot += u"Last played: {0}\n".format(self.pack(play))
+        if action:
+            bot += u"Last played: {0}\n".format(self.pack(action))
         bot += u"Player: {0}\n".format(player)
 
         return (
@@ -66,7 +66,7 @@ class Board(object):
                     u"\u2551" +
                     u"\u2551".join(
                         u"\u2502".join(
-                            plays.get((R, C, r, c), " ") for c in xrange(3)
+                            actions.get((R, C, r, c), " ") for c in xrange(3)
                         )
                         for C in xrange(3)
                     ) +
@@ -78,21 +78,21 @@ class Board(object):
             bot
         )
 
-    def parse(self, play):
+    def parse(self, action):
         try:
-            R, C, r, c = map(int, play.split())
+            R, C, r, c = map(int, action.split())
         except Exception:
             return
         return R, C, r, c
 
-    def pack(self, play):
+    def pack(self, action):
         try:
-            return '{0} {1} {2} {3}'.format(*play)
+            return '{0} {1} {2} {3}'.format(*action)
         except Exception:
             return ''
 
-    def next_state(self, state, play):
-        R, C, r, c = play
+    def next_state(self, state, action):
+        R, C, r, c = action
         player = state[-1]
         board_index = 2*(3*R + C)
         player_index = player - 1
@@ -116,11 +116,11 @@ class Board(object):
 
         return tuple(state)
 
-    def is_legal(self, state_history, play):
-        state = state_history[-1]
-        R, C, r, c = play
+    def is_legal(self, history, action):
+        state = history[-1]
+        R, C, r, c = action
 
-        # Is play out of bounds?
+        # Is action out of bounds?
         if (R, C) not in self.positions:
             return False
         if (r, c) not in self.positions:
@@ -135,15 +135,15 @@ class Board(object):
         if self.positions[(r, c)] & occupied:
             return False
 
-        # Is our play unconstrained by the previous play?
+        # Is our action unconstrained by the previous action?
         if state[20] is None:
             return True
 
         # Otherwise, we must play in the proper sub-board.
         return (R, C) == (state[20], state[21])
 
-    def legal_plays(self, state_history):
-        state = state_history[-1]
+    def legal_actions(self, history):
+        state = history[-1]
         R, C = state[20], state[21]
         Rset, Cset = (R,), (C,)
         if R is None:
@@ -154,7 +154,7 @@ class Board(object):
         ]
         finished = state[18] | state[19]
 
-        plays = [
+        actions = [
             (R, C, r, c)
             for R in Rset
             for C in Cset
@@ -164,13 +164,13 @@ class Board(object):
             and not finished & self.positions[(R, C)]
         ]
 
-        return plays
+        return actions
 
     def current_player(self, state):
         return state[-1]
 
-    def winner(self, state_history):
-        state = state_history[-1]
+    def winner(self, history):
+        state = history[-1]
         p1 = state[18] & ~state[19]
         p2 = state[19] & ~state[18]
 
