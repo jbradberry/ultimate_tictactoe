@@ -169,21 +169,53 @@ class Board(object):
     def current_player(self, state):
         return state[-1]
 
-    def winner(self, history):
+    def is_ended(self, history):
         state = history[-1]
         p1 = state[18] & ~state[19]
         p2 = state[19] & ~state[18]
 
         if any(w & p1 == w for w in self.wins):
-            return 1
+            return True
         if any(w & p2 == w for w in self.wins):
-            return 2
+            return True
         if state[18] | state[19] == 0x1ff:
-            return 3
+            return True
 
-        return 0
+        return False
 
-    def winner_message(self, winner):
-        if winner == 3:
+    def win_values(self, history):
+        if not self.is_ended(history):
+            return
+
+        state = history[-1]
+        p1 = state[18] & ~state[19]
+        p2 = state[19] & ~state[18]
+
+        if any(w & p1 == w for w in self.wins):
+            return {1: 1, 2: 0}
+        if any(w & p2 == w for w in self.wins):
+            return {1: 0, 2: 1}
+        if state[18] | state[19] == 0x1ff:
+            return {1: 0.5, 2: 0.5}
+
+    def points_values(self, history):
+        if not self.is_ended(history):
+            return
+
+        state = history[-1]
+        p1 = state[18] & ~state[19]
+        p2 = state[19] & ~state[18]
+
+        if any(w & p1 == w for w in self.wins):
+            return {1: 1, 2: -1}
+        if any(w & p2 == w for w in self.wins):
+            return {1: -1, 2: 1}
+        if state[18] | state[19] == 0x1ff:
+            return {1: 0, 2: 0}
+
+    def winner_message(self, winners):
+        winners = sorted((v, k) for k, v in winners.iteritems())
+        value, winner = winners[-1]
+        if value == 0.5:
             return "Draw."
         return "Winner: Player {0}.".format(winner)
