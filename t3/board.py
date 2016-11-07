@@ -24,7 +24,7 @@ class Board(object):
         positions[(0, 2)] | positions[(1, 1)] | positions[(2, 0)],
     ]
 
-    def start(self):
+    def starting_state(self):
         # Each of the 9 pairs of player 1 and player 2 board bitmasks
         # plus the win/tie state of the big board for p1 and p2 plus
         # the row and column of the required board for the next action
