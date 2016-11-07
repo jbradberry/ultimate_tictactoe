@@ -56,7 +56,7 @@ class Board(object):
         sub = u"\u2567".join(u"\u2550" for x in xrange(3))
         bot = u"\u255a" + u"\u2569".join(sub for x in xrange(3)) + u"\u255d\n"
         if action:
-            bot += u"Last played: {0}\n".format(self.pack(action))
+            bot += u"Last played: {0}\n".format(self.unpack_action(action))
         bot += u"Player: {0}\n".format(player)
 
         return (
@@ -78,14 +78,14 @@ class Board(object):
             bot
         )
 
-    def parse(self, action):
+    def pack_action(self, notation):
         try:
-            R, C, r, c = map(int, action.split())
+            R, C, r, c = map(int, notation.split())
         except Exception:
             return
         return R, C, r, c
 
-    def pack(self, action):
+    def unpack_action(self, action):
         try:
             return '{0} {1} {2} {3}'.format(*action)
         except Exception:
