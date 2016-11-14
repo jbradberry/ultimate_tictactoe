@@ -78,6 +78,76 @@ class Board(object):
             bot
         )
 
+    def pack_state(self, data):
+        state = [0] * 20
+        state.extend([data['constraint']['outer-row'],
+                      data['constraint']['outer-column'],
+                      data['player']])
+
+        for item in data['pieces']:
+            R, C, player = item['outer-row'], item['outer-column'], item['player']
+            r, c = item['inner-row'], item['inner-column']
+            state[2*(3*R + C) + player - 1] += 1 << (3 * r + c)
+
+        for item in data['boards']:
+            players = (1, 2)
+            if item['player'] is not None:
+                players = (item['player'],)
+
+            for player in players:
+                state[17 + player] += 1 << (3 * item['outer-row'] + item['outer-column'])
+
+        return tuple(state)
+
+    def unpack_state(self, state):
+        player = state[-1]
+        p1_boards, p2_boards = state[18], state[19]
+
+        pieces, boards = [], []
+        for R in xrange(3):
+            for C in xrange(3):
+                for r in xrange(3):
+                    for c in xrange(3):
+                        index = 1 << (3 * r + c)
+
+                        if index & state[2*(3*R + C)]:
+                            pieces.append({
+                                'player': 1, 'type': 'X',
+                                'outer-row': R, 'outer-column': C,
+                                'inner-row': r, 'inner-column': c,
+                            })
+                        if index & state[2*(3*R + C) + 1]:
+                            pieces.append({
+                                'player': 2, 'type': 'O',
+                                'outer-row': R, 'outer-column': C,
+                                'inner-row': r, 'inner-column': c,
+                            })
+
+                board_index = 1 << (3 * R + C)
+                if board_index & p1_boards & p2_boards:
+                    boards.append({
+                        'player': None, 'type': 'full',
+                        'outer-row': R, 'outer-column': C,
+                    })
+                elif board_index & p1_boards:
+                    boards.append({
+                        'player': 1, 'type': 'X',
+                        'outer-row': R, 'outer-column': C,
+                    })
+                elif board_index & p2_boards:
+                    boards.append({
+                        'player': 2, 'type': 'O',
+                        'outer-row': R, 'outer-column': C,
+                    })
+
+        return {
+            'pieces': pieces,
+            'boards': boards,
+            'constraint': {'outer-row': state[20], 'outer-column': state[21]},
+            'player': player,
+            'previous_player': 3 - player,
+        }
+
     def pack_action(self, notation):
         try:
             R, C, r, c = map(int, notation.split())
