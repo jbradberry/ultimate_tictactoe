@@ -3,26 +3,11 @@
 class Board(object):
     num_players = 2
 
-    positions = dict(
-        ((r, c), 1<<(3*r + c))
-        for r in xrange(3)
-        for c in xrange(3)
+    wins = (
+        0b000000111, 0b000111000, 0b111000000,
+        0b100100100, 0b010010010, 0b001001001,
+        0b100010001, 0b001010100
     )
-
-    inv_positions = dict(
-        (v, P) for P, v in positions.iteritems()
-    )
-
-    wins = [
-        positions[(r, 0)] | positions[(r, 1)] | positions[(r, 2)]
-        for r in xrange(3)
-    ] + [
-        positions[(0, c)] | positions[(1, c)] | positions[(2, c)]
-        for c in xrange(3)
-    ] + [
-        positions[(0, 0)] | positions[(1, 1)] | positions[(2, 2)],
-        positions[(0, 2)] | positions[(1, 1)] | positions[(2, 0)],
-    ]
 
     def starting_state(self):
         # Each of the 9 pairs of player 1 and player 2 board bitmasks
@@ -32,15 +17,15 @@ class Board(object):
         return (0, 0) * 10 + (None, None, 1)
 
     def display(self, state, action, _unicode=True):
-        actions = dict(
-            ((R, C, r, c), p)
+        actions = {
+            (R, C, r, c): p
             for R in xrange(3)
             for C in xrange(3)
             for r in xrange(3)
             for c in xrange(3)
             for i, p in enumerate('XO')
-            if state[2*(3*R + C) + i] & self.positions[(r, c)]
-        )
+            if state[2*(3*R + C) + i] & 1 << (3 * r + c)
+        }
 
         player = state[-1]
 
@@ -164,22 +149,25 @@ class Board(object):
     def next_state(self, state, action):
         R, C, r, c = action
         player = state[-1]
-        board_index = 2*(3*R + C)
+        board_index = 6 * R + 2 * C  # 2*(3*R + C)
         player_index = player - 1
+
+        small_position = 1 << (3 * r + c)
+        large_position = 1 << (3 * R + C)
 
         state = list(state)
         state[-1] = 3 - player
-        state[board_index + player_index] |= self.positions[(r, c)]
+        state[board_index + player_index] |= small_position
         updated_board = state[board_index + player_index]
 
         full = (state[board_index] | state[board_index+1] == 0x1ff)
         if any(updated_board & w == w for w in self.wins):
-            state[18 + player_index] |= self.positions[(R, C)]
+            state[18 + player_index] |= large_position
         elif full:
-            state[18] |= self.positions[(R, C)]
-            state[19] |= self.positions[(R, C)]
+            state[18] |= large_position
+            state[19] |= large_position
 
-        if (state[18] | state[19]) & self.positions[(r, c)]:
+        if (state[18] | state[19]) & small_position:
             state[20], state[21] = None, None
         else:
             state[20], state[21] = r, c
@@ -191,9 +179,13 @@ class Board(object):
         R, C, r, c = action
 
         # Is action out of bounds?
-        if (R, C) not in self.positions:
+        if not (0 <= R < 3):
             return False
-        if (r, c) not in self.positions:
+        if not (0 <= C < 3):
+            return False
+        if not (0 <= r < 3):
+            return False
+        if not (0 <= c < 3):
             return False
 
         player = state[-1]
@@ -202,7 +194,7 @@ class Board(object):
 
         # Is the square within the sub-board already taken?
         occupied = state[board_index] | state[board_index+1]
-        if self.positions[(r, c)] & occupied:
+        if occupied & 1 << (3 * r + c):
             return False
 
         # Is our action unconstrained by the previous action?
@@ -224,17 +216,15 @@ class Board(object):
         ]
         finished = state[18] | state[19]
 
-        actions = [
+        return [
             (R, C, r, c)
             for R in Rset
             for C in Cset
             for r in xrange(3)
             for c in xrange(3)
-            if not occupied[3*R+C] & self.positions[(r, c)]
-            and not finished & self.positions[(R, C)]
+            if not occupied[3*R+C] & 1 << (3 * r + c)
+            and not finished & 1 << (3 * R + C)
         ]
-
-        return actions
 
     def previous_player(self, state):
         return 3 - state[-1]
