@@ -3,23 +3,6 @@
 class Board(object):
     num_players = 2
 
-    positions = dict(
-        ((r, c), 1<<(3*r + c))
-        for r in xrange(3)
-        for c in xrange(3)
-    )
-
-    wins = [
-        positions[(r, 0)] | positions[(r, 1)] | positions[(r, 2)]
-        for r in xrange(3)
-    ] + [
-        positions[(0, c)] | positions[(1, c)] | positions[(2, c)]
-        for c in xrange(3)
-    ] + [
-        positions[(0, 0)] | positions[(1, 1)] | positions[(2, 2)],
-        positions[(0, 2)] | positions[(1, 1)] | positions[(2, 0)],
-    ]
-
     def starting_state(self):
         # Each of the 9 pairs of player 1 and player 2 board bitmasks
         # plus the win/tie state of the big board for p1 and p2 plus
@@ -170,22 +153,24 @@ class Board(object):
     def next_state(self, state, action):
         R, C, r, c = action
         player = state[-1]
-        board_index = 2*(3*R + C)
+        board_index = 2 * (3 * R + C)
         player_index = player - 1
 
         state = list(state)
         state[-1] = 3 - player
-        state[board_index + player_index] |= self.positions[(r, c)]
+        state[board_index + player_index] |= 1 << (3 * r + c)
         updated_board = state[board_index + player_index]
 
-        full = (state[board_index] | state[board_index+1] == 0x1ff)
-        if any(updated_board & w == w for w in self.wins):
-            state[18 + player_index] |= self.positions[(R, C)]
-        elif full:
-            state[18] |= self.positions[(R, C)]
-            state[19] |= self.positions[(R, C)]
+        wins = (07, 070, 0700, 0111, 0222, 0444, 0421, 0124)
 
-        if (state[18] | state[19]) & self.positions[(r, c)]:
+        full = (state[board_index] | state[board_index+1] == 0777)
+        if any(updated_board & w == w for w in wins):
+            state[18 + player_index] |= 1 << (3 * R + C)
+        elif full:
+            state[18] |= 1 << (3 * R + C)
+            state[19] |= 1 << (3 * R + C)
+
+        if (state[18] | state[19]) & 1 << (3 * r + c):
             state[20], state[21] = None, None
         else:
             state[20], state[21] = r, c
@@ -197,18 +182,22 @@ class Board(object):
         R, C, r, c = action
 
         # Is action out of bounds?
-        if (R, C) not in self.positions:
+        if not (0 <= R <= 2):
             return False
-        if (r, c) not in self.positions:
+        if not (0 <= C <= 2):
+            return False
+        if not (0 <= r <= 2):
+            return False
+        if not (0 <= c <= 2):
             return False
 
         player = state[-1]
-        board_index = 2*(3*R + C)
+        board_index = 2 * (3 * R + C)
         player_index = player - 1
 
         # Is the square within the sub-board already taken?
         occupied = state[board_index] | state[board_index+1]
-        if self.positions[(r, c)] & occupied:
+        if occupied & 1 << (3 * r + c):
             return False
 
         # Is our action unconstrained by the previous action?
@@ -223,10 +212,10 @@ class Board(object):
         R, C = state[20], state[21]
         Rset, Cset = (R,), (C,)
         if R is None:
-            Rset, Cset = range(3), range(3)
+            Rset = Cset = (0, 1, 2)
 
         occupied = [
-            state[2*x] | state[2*x+1] for x in xrange(9)
+            state[2 * x] | state[2 * x + 1] for x in xrange(9)
         ]
         finished = state[18] | state[19]
 
@@ -236,8 +225,8 @@ class Board(object):
             for C in Cset
             for r in xrange(3)
             for c in xrange(3)
-            if not occupied[3*R+C] & self.positions[(r, c)]
-            and not finished & self.positions[(R, C)]
+            if not occupied[3 * R + C] & 1 << (3 * r + c)
+            and not finished & 1 << (3 * R + C)
         ]
 
         return actions
@@ -253,11 +242,13 @@ class Board(object):
         p1 = state[18] & ~state[19]
         p2 = state[19] & ~state[18]
 
-        if any(w & p1 == w for w in self.wins):
+        wins = (07, 070, 0700, 0111, 0222, 0444, 0421, 0124)
+
+        if any(w & p1 == w for w in wins):
             return True
-        if any(w & p2 == w for w in self.wins):
+        if any(w & p2 == w for w in wins):
             return True
-        if state[18] | state[19] == 0x1ff:
+        if state[18] | state[19] == 0777:
             return True
 
         return False
@@ -270,11 +261,13 @@ class Board(object):
         p1 = state[18] & ~state[19]
         p2 = state[19] & ~state[18]
 
-        if any(w & p1 == w for w in self.wins):
+        wins = (07, 070, 0700, 0111, 0222, 0444, 0421, 0124)
+
+        if any(w & p1 == w for w in wins):
             return {1: 1, 2: 0}
-        if any(w & p2 == w for w in self.wins):
+        if any(w & p2 == w for w in wins):
             return {1: 0, 2: 1}
-        if state[18] | state[19] == 0x1ff:
+        if state[18] | state[19] == 0777:
             return {1: 0.5, 2: 0.5}
 
     def points_values(self, history):
@@ -285,11 +278,13 @@ class Board(object):
         p1 = state[18] & ~state[19]
         p2 = state[19] & ~state[18]
 
-        if any(w & p1 == w for w in self.wins):
+        wins = (07, 070, 0700, 0111, 0222, 0444, 0421, 0124)
+
+        if any(w & p1 == w for w in wins):
             return {1: 1, 2: -1}
-        if any(w & p2 == w for w in self.wins):
+        if any(w & p2 == w for w in wins):
             return {1: -1, 2: 1}
-        if state[18] | state[19] == 0x1ff:
+        if state[18] | state[19] == 0777:
             return {1: 0, 2: 0}
 
     def winner_message(self, winners):
