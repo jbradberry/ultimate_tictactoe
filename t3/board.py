@@ -9,10 +9,6 @@ class Board(object):
         for c in xrange(3)
     )
 
-    inv_positions = dict(
-        (v, P) for P, v in positions.iteritems()
-    )
-
     wins = [
         positions[(r, 0)] | positions[(r, 1)] | positions[(r, 2)]
         for r in xrange(3)
@@ -32,17 +28,11 @@ class Board(object):
         return (0, 0) * 10 + (None, None, 1)
 
     def display(self, state, action, _unicode=True):
-        actions = dict(
-            ((R, C, r, c), p)
-            for R in xrange(3)
-            for C in xrange(3)
-            for r in xrange(3)
-            for c in xrange(3)
-            for i, p in enumerate('XO')
-            if state[2*(3*R + C) + i] & self.positions[(r, c)]
-        )
-
-        player = state[-1]
+        pieces = {
+            (slot['outer-row'], slot['outer-column'],
+             slot['inner-row'], slot['inner-column']): slot['type']
+            for slot in state['pieces']
+        }
 
         sub = u"\u2564".join(u"\u2550" for x in xrange(3))
         top = u"\u2554" + u"\u2566".join(sub for x in xrange(3)) + u"\u2557\n"
@@ -56,8 +46,9 @@ class Board(object):
         sub = u"\u2567".join(u"\u2550" for x in xrange(3))
         bot = u"\u255a" + u"\u2569".join(sub for x in xrange(3)) + u"\u255d\n"
         if action:
-            bot += u"Last played: {0}\n".format(self.unpack_action(action))
-        bot += u"Player: {0}\n".format(player)
+            bot += u"Last played: {0}\n".format(
+                self.to_notation(self.to_compact_action(action)))
+        bot += u"Player: {0}\n".format(state['player'])
 
         return (
             top +
@@ -66,7 +57,7 @@ class Board(object):
                     u"\u2551" +
                     u"\u2551".join(
                         u"\u2502".join(
-                            actions.get((R, C, r, c), " ") for c in xrange(3)
+                            pieces.get((R, C, r, c), " ") for c in xrange(3)
                         )
                         for C in xrange(3)
                     ) +
@@ -78,11 +69,13 @@ class Board(object):
             bot
         )
 
-    def pack_state(self, data):
+    def to_compact_state(self, data):
         state = [0] * 20
-        state.extend([data['constraint']['outer-row'],
-                      data['constraint']['outer-column'],
-                      data['player']])
+        state.extend([
+            data['constraint']['outer-row'],
+            data['constraint']['outer-column'],
+            data['player']
+        ])
 
         for item in data['pieces']:
             R, C, player = item['outer-row'], item['outer-column'], item['player']
@@ -99,7 +92,7 @@ class Board(object):
 
         return tuple(state)
 
-    def unpack_state(self, state):
+    def to_json_state(self, state):
         player = state[-1]
         p1_boards, p2_boards = state[18], state[19]
 
@@ -148,18 +141,31 @@ class Board(object):
             'previous_player': 3 - player,
         }
 
-    def pack_action(self, notation):
+    def to_compact_action(self, action):
+        return (
+            action['outer-row'], action['outer-column'],
+            action['inner-row'], action['inner-column']
+        )
+
+    def to_json_action(self, action):
+        try:
+            R, C, r, c = action
+            return {
+                'outer-row': R, 'outer-column': C,
+                'inner-row': r, 'inner-column': c,
+            }
+        except Exception:
+            return {}
+
+    def from_notation(self, notation):
         try:
             R, C, r, c = map(int, notation.split())
         except Exception:
             return
         return R, C, r, c
 
-    def unpack_action(self, action):
-        try:
-            return '{0} {1} {2} {3}'.format(*action)
-        except Exception:
-            return ''
+    def to_notation(self, action):
+        return ' '.join(map(str, action))
 
     def next_state(self, state, action):
         R, C, r, c = action
