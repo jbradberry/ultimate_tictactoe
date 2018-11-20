@@ -150,7 +150,8 @@ class Board(object):
     def to_notation(self, action):
         return ' '.join(map(str, action))
 
-    def next_state(self, state, action):
+    def next_state(self, history, action):
+        state = history[-1]
         R, C, r, c = action
         player = state[-1]
         board_index = 2 * (3 * R + C)
