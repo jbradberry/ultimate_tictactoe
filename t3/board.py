@@ -33,6 +33,8 @@ class Board(object):
                 self.to_notation(self.to_compact_action(action)))
         bot += u"Player: {0}\n".format(state['player'])
 
+        constraint = (state['constraint']['outer-row'], state['constraint']['outer-column'])
+
         return (
             top +
             div.join(
@@ -40,7 +42,8 @@ class Board(object):
                     u"\u2551" +
                     u"\u2551".join(
                         u"\u2502".join(
-                            pieces.get((R, C, r, c), " ") for c in xrange(3)
+                            pieces.get((R, C, r, c), u"\u2592" if constraint in ((R, C), (None, None)) else " ")
+                            for c in xrange(3)
                         )
                         for C in xrange(3)
                     ) +
