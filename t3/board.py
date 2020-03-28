@@ -1,3 +1,6 @@
+import six
+from six.moves import map
+from six.moves import range
 
 
 class Board(object):
@@ -17,17 +20,17 @@ class Board(object):
             for slot in state['pieces']
         }
 
-        sub = u"\u2564".join(u"\u2550" for x in xrange(3))
-        top = u"\u2554" + u"\u2566".join(sub for x in xrange(3)) + u"\u2557\n"
+        sub = u"\u2564".join(u"\u2550" for x in range(3))
+        top = u"\u2554" + u"\u2566".join(sub for x in range(3)) + u"\u2557\n"
 
-        sub = u"\u256a".join(u"\u2550" for x in xrange(3))
-        div = u"\u2560" + u"\u256c".join(sub for x in xrange(3)) + u"\u2563\n"
+        sub = u"\u256a".join(u"\u2550" for x in range(3))
+        div = u"\u2560" + u"\u256c".join(sub for x in range(3)) + u"\u2563\n"
 
-        sub = u"\u253c".join(u"\u2500" for x in xrange(3))
-        sep = u"\u255f" + u"\u256b".join(sub for x in xrange(3)) + u"\u2562\n"
+        sub = u"\u253c".join(u"\u2500" for x in range(3))
+        sep = u"\u255f" + u"\u256b".join(sub for x in range(3)) + u"\u2562\n"
 
-        sub = u"\u2567".join(u"\u2550" for x in xrange(3))
-        bot = u"\u255a" + u"\u2569".join(sub for x in xrange(3)) + u"\u255d\n"
+        sub = u"\u2567".join(u"\u2550" for x in range(3))
+        bot = u"\u255a" + u"\u2569".join(sub for x in range(3)) + u"\u255d\n"
         if action:
             bot += u"Last played: {0}\n".format(
                 self.to_notation(self.to_compact_action(action)))
@@ -43,14 +46,14 @@ class Board(object):
                     u"\u2551".join(
                         u"\u2502".join(
                             pieces.get((R, C, r, c), u"\u2592" if constraint in ((R, C), (None, None)) else " ")
-                            for c in xrange(3)
+                            for c in range(3)
                         )
-                        for C in xrange(3)
+                        for C in range(3)
                     ) +
                     u"\u2551\n"
-                    for r in xrange(3)
+                    for r in range(3)
                 )
-                for R in xrange(3)
+                for R in range(3)
             ) +
             bot
         )
@@ -83,10 +86,10 @@ class Board(object):
         p1_boards, p2_boards = state[18], state[19]
 
         pieces, boards = [], []
-        for R in xrange(3):
-            for C in xrange(3):
-                for r in xrange(3):
-                    for c in xrange(3):
+        for R in range(3):
+            for C in range(3):
+                for r in range(3):
+                    for c in range(3):
                         index = 1 << (3 * r + c)
 
                         if index & state[2*(3*R + C)]:
@@ -145,7 +148,7 @@ class Board(object):
 
     def from_notation(self, notation):
         try:
-            R, C, r, c = map(int, notation.split())
+            R, C, r, c = list(map(int, notation.split()))
         except Exception:
             return
         return R, C, r, c
@@ -165,9 +168,9 @@ class Board(object):
         state[board_index + player_index] |= 1 << (3 * r + c)
         updated_board = state[board_index + player_index]
 
-        wins = (07, 070, 0700, 0111, 0222, 0444, 0421, 0124)
+        wins = (0o7, 0o70, 0o700, 0o111, 0o222, 0o444, 0o421, 0o124)
 
-        full = (state[board_index] | state[board_index+1] == 0777)
+        full = (state[board_index] | state[board_index+1] == 0o777)
         if any(updated_board & w == w for w in wins):
             state[18 + player_index] |= 1 << (3 * R + C)
         elif full:
@@ -217,7 +220,7 @@ class Board(object):
             Rset = Cset = (0, 1, 2)
 
         occupied = [
-            state[2 * x] | state[2 * x + 1] for x in xrange(9)
+            state[2 * x] | state[2 * x + 1] for x in range(9)
         ]
         finished = state[18] | state[19]
 
@@ -225,8 +228,8 @@ class Board(object):
             (R, C, r, c)
             for R in Rset
             for C in Cset
-            for r in xrange(3)
-            for c in xrange(3)
+            for r in range(3)
+            for c in range(3)
             if not occupied[3 * R + C] & 1 << (3 * r + c)
             and not finished & 1 << (3 * R + C)
         ]
@@ -243,13 +246,13 @@ class Board(object):
         p1 = state[18] & ~state[19]
         p2 = state[19] & ~state[18]
 
-        wins = (07, 070, 0700, 0111, 0222, 0444, 0421, 0124)
+        wins = (0o7, 0o70, 0o700, 0o111, 0o222, 0o444, 0o421, 0o124)
 
         if any(w & p1 == w for w in wins):
             return True
         if any(w & p2 == w for w in wins):
             return True
-        if state[18] | state[19] == 0777:
+        if state[18] | state[19] == 0o777:
             return True
 
         return False
@@ -261,13 +264,13 @@ class Board(object):
         p1 = state[18] & ~state[19]
         p2 = state[19] & ~state[18]
 
-        wins = (07, 070, 0700, 0111, 0222, 0444, 0421, 0124)
+        wins = (0o7, 0o70, 0o700, 0o111, 0o222, 0o444, 0o421, 0o124)
 
         if any(w & p1 == w for w in wins):
             return {1: 1, 2: 0}
         if any(w & p2 == w for w in wins):
             return {1: 0, 2: 1}
-        if state[18] | state[19] == 0777:
+        if state[18] | state[19] == 0o777:
             return {1: 0.5, 2: 0.5}
 
     def points_values(self, state):
@@ -277,17 +280,17 @@ class Board(object):
         p1 = state[18] & ~state[19]
         p2 = state[19] & ~state[18]
 
-        wins = (07, 070, 0700, 0111, 0222, 0444, 0421, 0124)
+        wins = (0o7, 0o70, 0o700, 0o111, 0o222, 0o444, 0o421, 0o124)
 
         if any(w & p1 == w for w in wins):
             return {1: 1, 2: -1}
         if any(w & p2 == w for w in wins):
             return {1: -1, 2: 1}
-        if state[18] | state[19] == 0777:
+        if state[18] | state[19] == 0o777:
             return {1: 0, 2: 0}
 
     def winner_message(self, winners):
-        winners = sorted((v, k) for k, v in winners.iteritems())
+        winners = sorted((v, k) for k, v in six.iteritems(winners))
         value, winner = winners[-1]
         if value == 0.5:
             return "Draw."
