@@ -17,21 +17,21 @@ class Board(object):
             for slot in state['pieces']
         }
 
-        sub = u"\u2564".join(u"\u2550" for x in range(3))
-        top = u"\u2554" + u"\u2566".join(sub for x in range(3)) + u"\u2557\n"
+        sub = "\u2564".join("\u2550" for x in range(3))
+        top = "\u2554" + "\u2566".join(sub for x in range(3)) + "\u2557\n"
 
-        sub = u"\u256a".join(u"\u2550" for x in range(3))
-        div = u"\u2560" + u"\u256c".join(sub for x in range(3)) + u"\u2563\n"
+        sub = "\u256a".join("\u2550" for x in range(3))
+        div = "\u2560" + "\u256c".join(sub for x in range(3)) + "\u2563\n"
 
-        sub = u"\u253c".join(u"\u2500" for x in range(3))
-        sep = u"\u255f" + u"\u256b".join(sub for x in range(3)) + u"\u2562\n"
+        sub = "\u253c".join("\u2500" for x in range(3))
+        sep = "\u255f" + "\u256b".join(sub for x in range(3)) + "\u2562\n"
 
-        sub = u"\u2567".join(u"\u2550" for x in range(3))
-        bot = u"\u255a" + u"\u2569".join(sub for x in range(3)) + u"\u255d\n"
+        sub = "\u2567".join("\u2550" for x in range(3))
+        bot = "\u255a" + "\u2569".join(sub for x in range(3)) + "\u255d\n"
         if action:
-            bot += u"Last played: {0}\n".format(
+            bot += "Last played: {0}\n".format(
                 self.to_notation(self.to_compact_action(action)))
-        bot += u"Player: {0}\n".format(state['player'])
+        bot += "Player: {0}\n".format(state['player'])
 
         constraint = (state['constraint']['outer-row'], state['constraint']['outer-column'])
 
@@ -39,15 +39,15 @@ class Board(object):
             top +
             div.join(
                 sep.join(
-                    u"\u2551" +
-                    u"\u2551".join(
-                        u"\u2502".join(
-                            pieces.get((R, C, r, c), u"\u2592" if constraint in ((R, C), (None, None)) else " ")
+                    "\u2551" +
+                    "\u2551".join(
+                        "\u2502".join(
+                            pieces.get((R, C, r, c), "\u2592" if constraint in ((R, C), (None, None)) else " ")
                             for c in range(3)
                         )
                         for C in range(3)
                     ) +
-                    u"\u2551\n"
+                    "\u2551\n"
                     for r in range(3)
                 )
                 for R in range(3)
