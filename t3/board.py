@@ -16,44 +16,36 @@ class Board:
              slot['inner-row'], slot['inner-column']): slot['type']
             for slot in state['pieces']
         }
-
-        sub = "\u2564".join("\u2550" for x in range(3))
-        top = "\u2554" + "\u2566".join(sub for x in range(3)) + "\u2557\n"
-
-        sub = "\u256a".join("\u2550" for x in range(3))
-        div = "\u2560" + "\u256c".join(sub for x in range(3)) + "\u2563\n"
-
-        sub = "\u253c".join("\u2500" for x in range(3))
-        sep = "\u255f" + "\u256b".join(sub for x in range(3)) + "\u2562\n"
-
-        sub = "\u2567".join("\u2550" for x in range(3))
-        bot = "\u255a" + "\u2569".join(sub for x in range(3)) + "\u255d\n"
-        if action:
-            bot += "Last played: {0}\n".format(
-                self.to_notation(self.to_compact_action(action)))
-        bot += "Player: {0}\n".format(state['player'])
-
         constraint = (state['constraint']['outer-row'], state['constraint']['outer-column'])
 
-        return (
-            top +
-            div.join(
-                sep.join(
-                    "\u2551" +
-                    "\u2551".join(
-                        "\u2502".join(
-                            pieces.get((R, C, r, c), "\u2592" if constraint in ((R, C), (None, None)) else " ")
+        return ''.join((
+            "╔═╤═╤═╦═╤═╤═╦═╤═╤═╗\n",
+            "╠═╪═╪═╬═╪═╪═╬═╪═╪═╣\n".join(
+                "╟─┼─┼─╫─┼─┼─╫─┼─┼─╢\n".join(
+                    "║".join((
+                        '',
+                        "│".join(
+                            pieces.get((R, 0, r, c), "▒" if constraint in ((R, 0), (None, None)) else " ")
                             for c in range(3)
-                        )
-                        for C in range(3)
-                    ) +
-                    "\u2551\n"
+                        ),
+                        "│".join(
+                            pieces.get((R, 1, r, c), "▒" if constraint in ((R, 1), (None, None)) else " ")
+                            for c in range(3)
+                        ),
+                        "│".join(
+                            pieces.get((R, 2, r, c), "▒" if constraint in ((R, 2), (None, None)) else " ")
+                            for c in range(3)
+                        ),
+                        "\n"
+                    ))
                     for r in range(3)
                 )
                 for R in range(3)
-            ) +
-            bot
-        )
+            ),
+            "╚═╧═╧═╩═╧═╧═╩═╧═╧═╝\n",
+            f"Last played: {self.to_notation(self.to_compact_action(action))}\n" if action else "",
+            f"Player: {state['player']}\n"
+        ))
 
     def to_compact_state(self, data):
         state = [0] * 20
@@ -291,4 +283,4 @@ class Board:
         value, winner = winners[-1]
         if value == 0.5:
             return "Draw."
-        return "Winner: Player {0}.".format(winner)
+        return f"Winner: Player {winner}."
