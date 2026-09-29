@@ -1,6 +1,6 @@
 
 
-class Board(object):
+class Board:
     num_players = 2
 
     def starting_state(self):
