@@ -1,6 +1,3 @@
-import six
-from six.moves import map
-from six.moves import range
 
 
 class Board(object):
@@ -290,7 +287,7 @@ class Board(object):
             return {1: 0, 2: 0}
 
     def winner_message(self, winners):
-        winners = sorted((v, k) for k, v in six.iteritems(winners))
+        winners = sorted((v, k) for k, v in winners.items())
         value, winner = winners[-1]
         if value == 0.5:
             return "Draw."
