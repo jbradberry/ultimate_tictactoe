@@ -8,7 +8,7 @@ What is this thing?  See
 Requirements
 ------------
 
-* Python 2.7, 3.5+; PyPy; PyPy3
+* Python 3.10+; PyPy; PyPy3
 
 
 Getting Started
@@ -34,18 +34,20 @@ and then install the requirements ::
 
 To run the server with Ultimate Tic Tac Toe ::
 
-    $ board-serve.py t3
+    $ board-serve t3
 
 Optionally, the server ip address and port number can be added ::
 
-    $ board-serve.py t3 0.0.0.0
-    $ board-serve.py t3 0.0.0.0 8000
+    $ board-serve t3 0.0.0.0
+    $ board-serve t3 0.0.0.0 8000
 
 To connect a client as a human player ::
 
-    $ board-play.py t3 human
-    $ board-play.py t3 human 192.168.1.1 8000   # with ip addr and port
+    $ board-play t3 human
+    $ board-play t3 human 192.168.1.1 8000   # with ip addr and port
 
-or with the provided AI player ::
+To connect a client using one of the compatible `Monte Carlo Tree
+Search AI <https://github.com/jbradberry/mcts>`_ players ::
 
-    $ board-play.py t3 t3.jrb_mcts
+    $ board-play t3 jrb.mcts.uct    # number of wins metric
+    $ board-play t3 jrb.mcts.uctv   # point value of the board metric
