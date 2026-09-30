@@ -1,0 +1,27 @@
+[project]
+name = "UltimateTicTacToe"
+version = "0.9dev"
+requires-python = ">= 3.8"
+authors = [
+  {name = "Jeff Bradberry", email = "jeff.bradberry@gmail.com"},
+]
+description = "An implementation of Ultimate Tic Tac Toe."
+readme = "README.rst"
+license = "MIT"
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+]
+
+[project.entry-points."jrb_board.games"]
+t3 = "t3.board:Board"
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+packages = ["t3"]
